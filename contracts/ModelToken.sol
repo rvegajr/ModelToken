@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/finance/PaymentSplitter.sol";
 /*
 Requirements
-Address blocking /removal, array (external)
+Address blocking /removal, array (external) - this.blackList/removeFromBlacklist -  https://ethereum.stackexchange.com/questions/99127/how-do-i-blacklist-an-address-from-buying-my-token
 Weekly Limit value of trade (external?)
 Swap at 1:1 with another coin (external)
 Dev Wallet, (external) - ERC721 payable - https://medium.com/codex/how-to-use-openzeppelins-paymentsplitter-8ba8de09dbf
@@ -32,7 +32,9 @@ contract ModelToken is Initializable, ERC1155Upgradeable, OwnableUpgradeable, Pa
         __Pausable_init();
         __ERC1155Burnable_init();
         __ERC1155Supply_init();
+
     }
+    mapping(address=>bool) isBlacklisted;
 
     function setURI(string memory newuri) public onlyOwner {
         _setURI(newuri);
@@ -65,6 +67,19 @@ contract ModelToken is Initializable, ERC1155Upgradeable, OwnableUpgradeable, Pa
         whenNotPaused
         override(ERC1155Upgradeable, ERC1155SupplyUpgradeable)
     {
+        require(!isBlacklisted[_to], "Recipient is backlisted");
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+    }
+
+    function blackList(address _user) public onlyOwner {
+        require(!isBlacklisted[_user], "user already blacklisted");
+        isBlacklisted[_user] = true;
+        // emit events as well
+    }
+
+    function removeFromBlacklist(address _user) public onlyOwner {
+        require(isBlacklisted[_user], "user already whitelisted");
+        isBlacklisted[_user] = false;
+        // emit events as well
     }
 }
